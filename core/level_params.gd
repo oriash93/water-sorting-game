@@ -14,6 +14,6 @@ static func for_level(n: int) -> LevelParams:
 	p.colors = mini(3 + (n - 1) / 3, 12)
 	p.empties = 2
 	p.capacity = 4
-	p.steps = p.colors * p.capacity * 3 + mini(n, 40)
+	p.steps = p.colors * p.capacity * 6 + mini(n, 40)
 	p.level_seed = n * 7919 + 13
 	return p
