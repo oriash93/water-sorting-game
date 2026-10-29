@@ -7,32 +7,32 @@ var caps: PackedInt32Array = PackedInt32Array()
 var history: Array = []
 
 
-static func from_bottles(b: Array, capacity: int) -> PuzzleState:
-	var s := PuzzleState.new()
-	for bottle in b:
-		s.bottles.append((bottle as Array).duplicate())
-		s.caps.append(capacity)
-	return s
+static func from_bottles(bottle_list: Array, capacity: int) -> PuzzleState:
+	var state := PuzzleState.new()
+	for bottle in bottle_list:
+		state.bottles.append((bottle as Array).duplicate())
+		state.caps.append(capacity)
+	return state
 
 
 func clone() -> PuzzleState:
-	var s := PuzzleState.new()
-	for b in bottles:
-		s.bottles.append((b as Array).duplicate())
-	s.caps = caps.duplicate()
-	return s
+	var copy := PuzzleState.new()
+	for bottle in bottles:
+		copy.bottles.append((bottle as Array).duplicate())
+	copy.caps = caps.duplicate()
+	return copy
 
 
 ## Order-independent identity of the position (bottles are interchangeable).
 func key() -> String:
-	var parts: PackedStringArray = PackedStringArray()
-	for i in bottles.size():
-		var t := str(caps[i]) + ":"
-		for c in bottles[i]:
-			t += char(65 + c)
-		parts.append(t)
-	parts.sort()
-	return "|".join(parts)
+	var bottle_keys: PackedStringArray = PackedStringArray()
+	for bottle_index in bottles.size():
+		var bottle_key := str(caps[bottle_index]) + ":"
+		for color in bottles[bottle_index]:
+			bottle_key += char(65 + color)
+		bottle_keys.append(bottle_key)
+	bottle_keys.sort()
+	return "|".join(bottle_keys)
 
 
 func add_bottle(capacity: int) -> int:

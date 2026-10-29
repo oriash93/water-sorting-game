@@ -2,99 +2,102 @@ class_name Rules
 extends RefCounted
 
 
-static func top_color(b: Array) -> int:
-	return -1 if b.is_empty() else b[b.size() - 1]
-
-
-static func top_run(b: Array) -> int:
-	if b.is_empty():
+static func top_run(bottle: Array) -> int:
+	if bottle.is_empty():
 		return 0
-	var c: int = b[b.size() - 1]
-	var n := 0
-	for i in range(b.size() - 1, -1, -1):
-		if b[i] != c:
+	var color: int = bottle[-1]
+	var run := 0
+	for layer_index in range(bottle.size() - 1, -1, -1):
+		if bottle[layer_index] != color:
 			break
-		n += 1
-	return n
+		run += 1
+	return run
 
 
-static func is_uniform(b: Array) -> bool:
-	return not b.is_empty() and top_run(b) == b.size()
+static func is_uniform(bottle: Array) -> bool:
+	return not bottle.is_empty() and top_run(bottle) == bottle.size()
 
 
-static func is_complete(b: Array, cap: int) -> bool:
-	return b.size() == cap and is_uniform(b)
+static func is_complete(bottle: Array, capacity: int) -> bool:
+	return bottle.size() == capacity and is_uniform(bottle)
+
+
+static func is_bottle_complete(state: PuzzleState, bottle_index: int) -> bool:
+	return is_complete(state.bottles[bottle_index], state.caps[bottle_index])
+
+
+## A bottle the player may pick up: it has liquid and is not already finished.
+static func is_selectable(state: PuzzleState, bottle_index: int) -> bool:
+	return not (state.bottles[bottle_index] as Array).is_empty() and not is_bottle_complete(state, bottle_index)
 
 
 ## Layers a pour from -> to would move; 0 when the pour is not legal.
-static func move_count(s: PuzzleState, from: int, to: int) -> int:
+static func move_count(state: PuzzleState, from: int, to: int) -> int:
 	if from == to:
 		return 0
-	var a: Array = s.bottles[from]
-	var b: Array = s.bottles[to]
-	if a.is_empty():
+	var source: Array = state.bottles[from]
+	var target: Array = state.bottles[to]
+	if source.is_empty():
 		return 0
-	var space: int = s.caps[to] - b.size()
-	if space <= 0:
+	var free_space: int = state.caps[to] - target.size()
+	if free_space <= 0:
 		return 0
-	if not b.is_empty() and b[b.size() - 1] != a[a.size() - 1]:
+	if not target.is_empty() and target[-1] != source[-1]:
 		return 0
-	return mini(top_run(a), space)
+	return mini(top_run(source), free_space)
 
 
 ## Legal but pointless: moving a finished or single-color bottle into an empty one,
 ## or pouring out of a bottle that is already complete.
-static func is_useless(s: PuzzleState, from: int, to: int) -> bool:
-	var a: Array = s.bottles[from]
-	if is_complete(a, s.caps[from]):
+static func is_useless(state: PuzzleState, from: int, to: int) -> bool:
+	if is_bottle_complete(state, from):
 		return true
-	return is_uniform(a) and (s.bottles[to] as Array).is_empty()
+	return is_uniform(state.bottles[from]) and (state.bottles[to] as Array).is_empty()
 
 
-static func can_pour(s: PuzzleState, from: int, to: int) -> bool:
-	return move_count(s, from, to) > 0 and not is_useless(s, from, to)
+static func can_pour(state: PuzzleState, from: int, to: int) -> bool:
+	return move_count(state, from, to) > 0 and not is_useless(state, from, to)
 
 
-static func legal_moves(s: PuzzleState) -> Array:
-	var out: Array = []
-	for i in s.bottles.size():
-		for j in s.bottles.size():
-			if can_pour(s, i, j):
-				out.append(Vector2i(i, j))
-	return out
+static func legal_moves(state: PuzzleState) -> Array:
+	var moves: Array = []
+	for from in state.bottles.size():
+		for to in state.bottles.size():
+			if can_pour(state, from, to):
+				moves.append(Vector2i(from, to))
+	return moves
 
 
 ## Applies the pour and returns its record, or an empty Dictionary if rejected.
-static func apply(s: PuzzleState, from: int, to: int) -> Dictionary:
-	if not can_pour(s, from, to):
+static func apply(state: PuzzleState, from: int, to: int) -> Dictionary:
+	if not can_pour(state, from, to):
 		return {}
-	var n := move_count(s, from, to)
-	var a: Array = s.bottles[from]
-	var b: Array = s.bottles[to]
-	var color: int = a[a.size() - 1]
-	for i in n:
-		a.pop_back()
-		b.append(color)
-	var rec := {"from": from, "to": to, "count": n, "color": color}
-	s.history.append(rec)
-	return rec
+	var moved_count := move_count(state, from, to)
+	var source: Array = state.bottles[from]
+	var target: Array = state.bottles[to]
+	var color: int = source[-1]
+	for _layer in moved_count:
+		source.pop_back()
+		target.append(color)
+	var move_record := {"from": from, "to": to, "count": moved_count, "color": color}
+	state.history.append(move_record)
+	return move_record
 
 
-static func undo(s: PuzzleState) -> Dictionary:
-	if s.history.is_empty():
+static func undo(state: PuzzleState) -> Dictionary:
+	if state.history.is_empty():
 		return {}
-	var rec: Dictionary = s.history.pop_back()
-	var a: Array = s.bottles[rec.from]
-	var b: Array = s.bottles[rec.to]
-	for i in int(rec.count):
-		b.pop_back()
-		a.append(rec.color)
-	return rec
+	var move_record: Dictionary = state.history.pop_back()
+	var source: Array = state.bottles[move_record.from]
+	var target: Array = state.bottles[move_record.to]
+	for _layer in int(move_record.count):
+		target.pop_back()
+		source.append(move_record.color)
+	return move_record
 
 
-static func is_solved(s: PuzzleState) -> bool:
-	for i in s.bottles.size():
-		var b: Array = s.bottles[i]
-		if not b.is_empty() and not is_complete(b, s.caps[i]):
+static func is_solved(state: PuzzleState) -> bool:
+	for bottle_index in state.bottles.size():
+		if not (state.bottles[bottle_index] as Array).is_empty() and not is_bottle_complete(state, bottle_index):
 			return false
 	return true
