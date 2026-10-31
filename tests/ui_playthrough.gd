@@ -61,10 +61,28 @@ func _run() -> void:
 	check(not path.is_empty(), "solver finds a path for level 1")
 
 	var key_before: String = game.state.key()
-	await _play(game, [path[0]])
-	check(game.state.history.size() == 1, "tap-tap pours via UI")
+	game._on_tap(path[0].x)
+	game._on_tap(path[0].y)
+	check(game.is_animating, "a pour animates after the second tap")
+	await _wait_idle(game)
+	check(not game.is_animating and game.state.history.size() == 1, "pour finishes and updates the state")
+	var source_view: BottleView = game.views[path[0].x]
+	check(source_view.rotation == 0.0 and source_view.top_trim == 0.0 and source_view.z_index == 0,
+			"source bottle is upright and reset after the pour")
 	game._on_undo()
 	check(game.state.key() == key_before, "undo restores the start position")
+
+	game._on_tap(path[0].x)
+	game._on_tap(path[0].y)
+	game._on_undo()
+	check(not game.is_animating and game.state.key() == key_before, "undo during a pour finishes it, then undoes it")
+	game._on_tap(path[0].x)
+	game._on_tap(path[0].y)
+	game._on_tap(path[0].x)
+	check(game.state.history.size() == 1 and not game.is_animating, "tapping during a pour finishes it first")
+	await _wait_idle(game)
+	game._on_undo()
+	check(game.state.key() == key_before, "state is back at the start after the skip checks")
 
 	await _play(game, [path[0], path[1]])
 	var mid_level_key: String = game.state.key()

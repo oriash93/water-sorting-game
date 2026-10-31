@@ -12,6 +12,7 @@ func _init() -> void:
 	_test_generator_deterministic()
 	_test_generator_solvable()
 	_test_solver_plays_to_win()
+	_test_liquid_math()
 	print("\n%d passed, %d failed" % [_passed, _failed])
 	quit(1 if _failed > 0 else 0)
 
@@ -92,6 +93,42 @@ func _test_generator_solvable() -> void:
 			solved_all = false
 			print("  solver failed on level ", level_number)
 	check(solved_all, "solver solves levels 1-15")
+
+
+func _near(actual: float, expected: float, tolerance := 0.01) -> bool:
+	return absf(actual - expected) <= tolerance
+
+
+func _test_liquid_math() -> void:
+	var layer_height := 100.0
+	var rect := Rect2(10, 20, 150, 4 * layer_height)
+	var layer_area := rect.size.x * layer_height
+	var upright := LiquidMath.up_vector(0.0)
+
+	var bounds := LiquidMath.layer_bounds(rect, upright, [1.0, 1.0, 1.0], layer_area)
+	check(_near(bounds[1] - bounds[0], layer_height, 0.05), "upright first layer is one layer tall")
+	check(_near(bounds[3] - bounds[0], 3.0 * layer_height, 0.05), "upright three layers are three layers tall")
+
+	check(_near(LiquidMath.spill_capacity(rect, 1, 0.0, layer_area), 4.0, 0.001), "upright bottle holds its full capacity")
+	check(_near(LiquidMath.spill_capacity(rect, 1, PI / 2.0, layer_area), 0.0, 0.001), "bottle on its side holds nothing")
+	check(_near(LiquidMath.spill_capacity(rect, -1, -PI / 2.0, layer_area), 0.0, 0.001), "left lip on its side holds nothing")
+
+	var max_angle := PI / 2.0 + 0.1
+	var table := LiquidMath.spill_table(rect, 1, layer_area, max_angle, 48)
+	var decreasing := true
+	for step in range(1, table.size()):
+		if table[step] > table[step - 1] + 0.0001:
+			decreasing = false
+	check(decreasing, "spill capacity only shrinks as the bottle tilts")
+	check(LiquidMath.angle_for_volume(table, 4.0, max_angle) == 0.0, "a full bottle starts spilling at no tilt")
+	check(LiquidMath.angle_for_volume(table, 0.0, max_angle) == max_angle, "emptying needs the maximum tilt")
+	var angle := LiquidMath.angle_for_volume(table, 2.0, max_angle)
+	check(_near(LiquidMath.spill_capacity(rect, 1, angle, layer_area), 2.0, 0.05), "angle for two layers spills exactly two layers")
+
+	var tilted_up := LiquidMath.up_vector(0.7)
+	var tilted_bounds := LiquidMath.layer_bounds(rect, tilted_up, [1.0, 1.0], layer_area)
+	var level_area := LiquidMath.area_below(LiquidMath.corners(rect), tilted_up, tilted_bounds[2])
+	check(_near(level_area, 2.0 * layer_area, 1.0), "tilted liquid keeps its volume")
 
 
 func _test_solver_plays_to_win() -> void:

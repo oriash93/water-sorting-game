@@ -15,8 +15,6 @@ const MAX_BOTTLE_WIDTH := 170.0
 const MAX_LAYER_HEIGHT := 110.0
 const BUTTON_HEIGHT := 150.0
 const BUTTON_BAR_HEIGHT := 200.0
-const STREAM_WIDTH := 18.0
-const STREAM_REACH_ABOVE_BOTTLE := 110.0
 const HINT_BUDGET_USEC := 6000
 const HINT_NODE_LIMIT := 50000
 
@@ -25,16 +23,19 @@ var level := 1
 var state: PuzzleState
 var views: Array[BottleView] = []
 var selected_index := -1
-var is_animating := false
 var has_won := false
 var extra_bottle_used := false
 var best_moves_by_level := {}
 var show_symbols := false
 var is_hinting := false
+var is_animating: bool:
+	get:
+		return pour_player != null and pour_player.is_playing()
 var hint_solver: Solver
 
 var board: Control
-var pour_stream: ColorRect
+var pour_stream: PourStream
+var pour_player: PourPlayer
 var level_label: Label
 var moves_label: Label
 var toast_label: Label
@@ -86,10 +87,12 @@ func _build_ui() -> void:
 	board = Control.new()
 	board.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(board)
-	pour_stream = ColorRect.new()
-	pour_stream.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	pour_stream.visible = false
+	pour_stream = PourStream.new()
+	pour_stream.set_anchors_preset(Control.PRESET_FULL_RECT)
 	board.add_child(pour_stream)
+	pour_player = PourPlayer.new()
+	pour_player.finished.connect(_on_pour_finished)
+	add_child(pour_player)
 
 	undo_button = _make_button("Undo", Color("#3A4258"), 42)
 	undo_button.pressed.connect(_on_undo)
@@ -201,6 +204,7 @@ func _layout() -> void:
 
 @warning_ignore("integer_division")
 func _layout_bottles() -> void:
+	_settle_animation()
 	var bottle_count := views.size()
 	if bottle_count == 0:
 		return
@@ -232,7 +236,6 @@ func _layout_bottles() -> void:
 func _start_level(level_number: int, replay_moves: Array = [], with_extra_bottle := false) -> void:
 	level = maxi(1, level_number)
 	has_won = false
-	is_animating = false
 	selected_index = -1
 	_cancel_hint()
 	state = Generator.generate(LevelParams.for_level(level))
@@ -285,8 +288,8 @@ func _refresh_all() -> void:
 	for bottle_index in views.size():
 		var bottle_view := views[bottle_index]
 		bottle_view.layers = (state.bottles[bottle_index] as Array).duplicate()
-		bottle_view.grow_count = 0
-		bottle_view.drain_count = 0
+		bottle_view.top_trim = 0.0
+		bottle_view.tilt = 0.0
 		bottle_view.lift = 0.0
 		bottle_view.hint_role = BottleView.HintRole.NONE
 		bottle_view.complete = Rules.is_bottle_complete(state, bottle_index)
@@ -299,10 +302,9 @@ func _update_hud() -> void:
 	if best_moves > 0:
 		text += "   Best: %d" % best_moves
 	moves_label.text = text
-	undo_button.disabled = state.history.is_empty() or is_animating or has_won
-	hint_button.disabled = is_animating or has_won
-	extra_button.disabled = extra_bottle_used or is_animating or has_won
-	restart_button.disabled = is_animating
+	undo_button.disabled = state.history.is_empty() or has_won
+	hint_button.disabled = has_won
+	extra_button.disabled = extra_bottle_used or has_won
 
 
 func _best_moves_for(level_number: int) -> int:
@@ -313,7 +315,8 @@ func _best_moves_for(level_number: int) -> int:
 # ---------- Input ----------
 
 func _on_tap(tapped_index: int) -> void:
-	if is_animating or has_won:
+	_settle_animation()
+	if has_won:
 		return
 	_clear_hint()
 	if selected_index == -1:
@@ -348,46 +351,21 @@ func _do_pour(from_index: int, to_index: int) -> void:
 	var move_record := Rules.apply(state, from_index, to_index)
 	if move_record.is_empty():
 		return
-	is_animating = true
 	_cancel_hint()
 	var source_view := views[from_index]
 	var target_view := views[to_index]
-	var layer_count: int = move_record.count
+	var layers_before := (state.bottles[from_index] as Array).duplicate()
+	for _layer in int(move_record.count):
+		layers_before.append(move_record.color)
+	source_view.layers = layers_before
 	target_view.layers = (state.bottles[to_index] as Array).duplicate()
-	target_view.grow_count = layer_count
-	target_view.grow_progress = 0.0
-	source_view.layers = (state.bottles[from_index] as Array).duplicate()
-	source_view.drain_count = layer_count
-	source_view.drain_color = move_record.color
-	source_view.drain_progress = 0.0
-	source_view.animate_lift(SELECT_LIFT, 0.0)
-
-	var surface_y := target_view.surface_y()
-	var stream_top := target_view.position.y + BottleView.LIFT_PADDING - STREAM_REACH_ABOVE_BOTTLE
-	pour_stream.color = PALETTE[move_record.color]
-	pour_stream.position = Vector2(target_view.position.x + target_view.size.x / 2.0 - STREAM_WIDTH / 2.0, stream_top)
-	pour_stream.size = Vector2(STREAM_WIDTH, maxf(10.0, surface_y - stream_top))
-	pour_stream.visible = true
 	Input.vibrate_handheld(25)
-
-	var duration := 0.18 + 0.1 * layer_count
-	var tween := create_tween().set_parallel(true)
-	tween.tween_property(target_view, "grow_progress", 1.0, duration)
-	tween.tween_property(source_view, "drain_progress", 1.0, duration)
-	tween.chain().tween_callback(_finish_pour.bind(from_index, to_index))
+	pour_player.play(source_view, target_view, pour_stream, move_record, board.size.x / 2.0)
 	_update_hud()
 
 
-func _finish_pour(from_index: int, to_index: int) -> void:
-	pour_stream.visible = false
-	var source_view := views[from_index]
-	var target_view := views[to_index]
-	target_view.grow_count = 0
-	source_view.drain_count = 0
-	source_view.animate_lift(0.0)
-	source_view.complete = Rules.is_bottle_complete(state, from_index)
-	target_view.complete = Rules.is_bottle_complete(state, to_index)
-	is_animating = false
+func _on_pour_finished(from_index: int, to_index: int) -> void:
+	_refresh_all()
 	if Rules.is_solved(state):
 		_on_win()
 	else:
@@ -395,6 +373,11 @@ func _finish_pour(from_index: int, to_index: int) -> void:
 		if Rules.legal_moves(state).is_empty():
 			_show_toast("No moves left - try Undo" + ("" if extra_bottle_used else " or + Bottle"), 4.0)
 	_update_hud()
+
+
+## Finishes any running pour at once so the next action never waits on an animation.
+func _settle_animation() -> void:
+	pour_player.skip()
 
 
 func _on_win() -> void:
@@ -416,7 +399,8 @@ func _on_next() -> void:
 
 
 func _on_undo() -> void:
-	if is_animating or has_won or state.history.is_empty():
+	_settle_animation()
+	if has_won or state.history.is_empty():
 		return
 	Rules.undo(state)
 	selected_index = -1
@@ -427,13 +411,13 @@ func _on_undo() -> void:
 
 
 func _on_restart() -> void:
-	if is_animating:
-		return
+	_settle_animation()
 	_start_level(level)
 
 
 func _on_extra() -> void:
-	if is_animating or has_won or extra_bottle_used:
+	_settle_animation()
+	if has_won or extra_bottle_used:
 		return
 	state.add_bottle(state.caps[0])
 	extra_bottle_used = true
@@ -448,14 +432,14 @@ func _on_symbols() -> void:
 	show_symbols = not show_symbols
 	for bottle_view in views:
 		bottle_view.show_symbols = show_symbols
-		bottle_view.queue_redraw()
 	_save()
 
 
 # ---------- Hint ----------
 
 func _on_hint() -> void:
-	if is_animating or has_won or is_hinting:
+	_settle_animation()
+	if has_won or is_hinting:
 		return
 	_clear_hint()
 	_set_selected(-1)
