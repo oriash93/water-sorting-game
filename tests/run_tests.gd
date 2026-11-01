@@ -108,6 +108,8 @@ func _test_liquid_math() -> void:
 	var bounds := LiquidMath.layer_bounds(rect, upright, [1.0, 1.0, 1.0], layer_area)
 	check(_near(bounds[1] - bounds[0], layer_height, 0.05), "upright first layer is one layer tall")
 	check(_near(bounds[3] - bounds[0], 3.0 * layer_height, 0.05), "upright three layers are three layers tall")
+	var searched_level := LiquidMath.level_for_area(LiquidMath.corners(rect), upright, 2.0 * layer_area)
+	check(_near(bounds[2], searched_level, 0.01), "upright shortcut matches the general search")
 
 	check(_near(LiquidMath.spill_capacity(rect, 1, 0.0, layer_area), 4.0, 0.001), "upright bottle holds its full capacity")
 	check(_near(LiquidMath.spill_capacity(rect, 1, PI / 2.0, layer_area), 0.0, 0.001), "bottle on its side holds nothing")

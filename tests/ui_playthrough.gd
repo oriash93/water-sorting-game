@@ -61,9 +61,11 @@ func _run() -> void:
 	check(not path.is_empty(), "solver finds a path for level 1")
 
 	var key_before: String = game.state.key()
+	var started_pours := [0]
+	game.pour_player.started.connect(func(_move_record: Dictionary) -> void: started_pours[0] += 1)
 	game._on_tap(path[0].x)
 	game._on_tap(path[0].y)
-	check(game.is_animating, "a pour animates after the second tap")
+	check(game.is_animating and started_pours[0] == 1, "a pour animates and announces itself after the second tap")
 	await _wait_idle(game)
 	check(not game.is_animating and game.state.history.size() == 1, "pour finishes and updates the state")
 	var source_view: BottleView = game.views[path[0].x]

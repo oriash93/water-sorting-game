@@ -65,6 +65,7 @@ var _rim_style := StyleBoxFlat.new()
 var _lip_style := StyleBoxFlat.new()
 var _lift_tween: Tween
 var _shake_tween: Tween
+var _refresh_pending := false
 
 
 func _init() -> void:
@@ -141,9 +142,16 @@ func shake() -> void:
 	_shake_tween.tween_property(self, "shake_offset", 0.0, 0.04)
 
 
+## Many properties change in one frame during animations; redraw once, at the end of it.
 func _refresh() -> void:
-	if _visual == null:
+	if _visual == null or _refresh_pending:
 		return
+	_refresh_pending = true
+	_apply_refresh.call_deferred()
+
+
+func _apply_refresh() -> void:
+	_refresh_pending = false
 	_visual.position = Vector2(shake_offset, -lift)
 	_visual.queue_redraw()
 	_overlay.queue_redraw()

@@ -5,6 +5,8 @@ extends Node
 ## liquid spills over its lip, drains while the target fills, then returns home.
 ## The game state is already updated; this only animates the views.
 
+## Emitted when a pour begins (hook for sound) and when it ends, including when skipped.
+signal started(move_record: Dictionary)
 signal finished(from_index: int, to_index: int)
 
 const ENTER_SECONDS := 0.22
@@ -15,6 +17,8 @@ const LIP_CLEARANCE := 60.0
 const LIP_OFFSET_FRACTION := 0.3
 const MAX_TILT := PI / 2.0 + 0.1
 const TABLE_STEPS := 48
+const FLOW_FADE_IN := 0.12
+const FLOW_FADE_OUT_START := 0.85
 const RAISED_Z_INDEX := 20
 
 var _tween: Tween
@@ -80,6 +84,7 @@ func play(source: BottleView, target: BottleView, stream: PourStream, move_recor
 	target.top_trim = float(_layer_count)
 	_playing = true
 	_apply(0.0)
+	started.emit(move_record)
 	_tween = create_tween()
 	_tween.tween_method(_apply, 0.0, 1.0, _total_seconds)
 	_tween.tween_callback(_complete)
@@ -108,7 +113,7 @@ func _apply(progress: float) -> void:
 		_set_poured(smoothstep(0.0, 1.0, pour_progress) * _layer_count)
 		_source.position = _pour_position
 		_source.lift = 0.0
-		var flow := smoothstep(0.0, 0.12, pour_progress) * (1.0 - smoothstep(0.85, 1.0, pour_progress))
+		var flow := smoothstep(0.0, FLOW_FADE_IN, pour_progress) * (1.0 - smoothstep(FLOW_FADE_OUT_START, 1.0, pour_progress))
 		_stream.configure(_source.get_transform() * _source.lip_point(_side),
 				Vector2(_target.position.x + _target.size.x / 2.0, _target.liquid_top_y()), _color, flow)
 	else:

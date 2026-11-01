@@ -76,10 +76,15 @@ static func layer_bounds(rect: Rect2, up: Vector2, volumes: Array, layer_area: f
 	var polygon := corners(rect)
 	var bounds := PackedFloat32Array()
 	bounds.append(lowest_level(polygon, up))
+	var upright := up.is_equal_approx(Vector2(0.0, -1.0))
 	var cumulative := 0.0
 	for volume in volumes:
 		cumulative += volume
-		bounds.append(level_for_area(polygon, up, cumulative * layer_area))
+		if upright:
+			# Flat stack: skip the search, the level is just a height above the floor.
+			bounds.append(-(rect.end.y - cumulative * layer_area / rect.size.x))
+		else:
+			bounds.append(level_for_area(polygon, up, cumulative * layer_area))
 	return bounds
 
 
