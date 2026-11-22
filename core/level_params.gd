@@ -9,9 +9,9 @@ extends Resource
 
 
 ## Endless gentle ramp: more colors and more scrambling as the level number grows.
-@warning_ignore("integer_division")
 static func for_level(level_number: int) -> LevelParams:
 	var params := LevelParams.new()
+	@warning_ignore("integer_division")
 	params.colors = mini(3 + (level_number - 1) / 3, 12)
 	params.empties = 2
 	params.capacity = 4
