@@ -7,7 +7,7 @@ extends Node
 
 ## Emitted when a pour begins (hook for sound) and when it ends, including when skipped.
 signal started(move_record: Dictionary)
-signal finished(from_index: int, to_index: int)
+signal finished
 
 const ENTER_SECONDS := 0.22
 const EXIT_SECONDS := 0.18
@@ -26,8 +26,6 @@ var _playing := false
 var _source: BottleView
 var _target: BottleView
 var _stream: PourStream
-var _from_index := 0
-var _to_index := 0
 var _layer_count := 0
 var _color := Color.WHITE
 var _side := 1
@@ -52,8 +50,6 @@ func play(source: BottleView, target: BottleView, stream: PourStream, move_recor
 	_source = source
 	_target = target
 	_stream = stream
-	_from_index = move_record.from
-	_to_index = move_record.to
 	_layer_count = move_record.count
 	_color = source.palette[move_record.color]
 
@@ -144,7 +140,7 @@ func _complete() -> void:
 	_source.top_trim = 0.0
 	_source.z_index = 0
 	_target.top_trim = 0.0
-	finished.emit(_from_index, _to_index)
+	finished.emit()
 
 
 static func _ease_out(value: float) -> float:

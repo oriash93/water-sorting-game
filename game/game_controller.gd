@@ -364,7 +364,7 @@ func _do_pour(from_index: int, to_index: int) -> void:
 	_update_hud()
 
 
-func _on_pour_finished(from_index: int, to_index: int) -> void:
+func _on_pour_finished() -> void:
 	_refresh_all()
 	if Rules.is_solved(state):
 		_on_win()
