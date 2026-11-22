@@ -109,8 +109,12 @@ func setup(bottle_capacity: int, bottle_width: float, new_layer_height: float) -
 
 ## Rectangle the liquid can occupy, in local coordinates.
 func interior_rect() -> Rect2:
-	return Rect2(LAYER_INSET, LIFT_PADDING + GLASS_EXTRA_HEIGHT - FLOOR_MARGIN,
-			size.x - LAYER_INSET * 2.0, capacity * layer_height)
+	return Rect2(
+		LAYER_INSET,
+		LIFT_PADDING + GLASS_EXTRA_HEIGHT - FLOOR_MARGIN,
+		size.x - LAYER_INSET * 2.0,
+		capacity * layer_height
+	)
 
 
 ## Point on the rim where liquid pours over when tipped toward `side` (+1 right, -1 left).
@@ -179,7 +183,9 @@ func _update_liquid() -> void:
 
 	var liquid_material := _liquid.material as ShaderMaterial
 	liquid_material.set_shader_parameter("body_size", size)
-	liquid_material.set_shader_parameter("interior", Vector4(rect.position.x, rect.position.y, rect.end.x, rect.end.y))
+	liquid_material.set_shader_parameter(
+		"interior", Vector4(rect.position.x, rect.position.y, rect.end.x, rect.end.y)
+	)
 	liquid_material.set_shader_parameter("up", up)
 	liquid_material.set_shader_parameter("layer_count", layers.size())
 	liquid_material.set_shader_parameter("layer_colors", colors)
@@ -187,8 +193,12 @@ func _update_liquid() -> void:
 
 
 func _glass_rect() -> Rect2:
-	return Rect2(GLASS_SIDE_INSET, LIFT_PADDING, size.x - GLASS_SIDE_INSET * 2.0,
-			capacity * layer_height + GLASS_EXTRA_HEIGHT)
+	return Rect2(
+		GLASS_SIDE_INSET,
+		LIFT_PADDING,
+		size.x - GLASS_SIDE_INSET * 2.0,
+		capacity * layer_height + GLASS_EXTRA_HEIGHT
+	)
 
 
 func _draw_glass() -> void:
@@ -206,14 +216,23 @@ func _draw_overlay() -> void:
 	_rim_style.border_color = rim_color
 	_lip_style.border_color = rim_color
 	_overlay.draw_style_box(_rim_style, _glass_rect())
-	_overlay.draw_style_box(_lip_style, Rect2(0, LIFT_PADDING - LIP_HEIGHT / 2.0, size.x, LIP_HEIGHT))
+	_overlay.draw_style_box(
+		_lip_style, Rect2(0, LIFT_PADDING - LIP_HEIGHT / 2.0, size.x, LIP_HEIGHT)
+	)
 
 	if show_symbols and is_zero_approx(tilt) and is_zero_approx(top_trim):
 		var rect := interior_rect()
 		for layer_index in layers.size():
 			var center_y := rect.end.y - (layer_index + 0.5) * layer_height
-			_overlay.draw_string(ThemeDB.fallback_font, Vector2(rect.position.x, center_y + 16.0),
-					LETTERS[layers[layer_index]], HORIZONTAL_ALIGNMENT_CENTER, rect.size.x, 44, Color(0, 0, 0, 0.6))
+			_overlay.draw_string(
+				ThemeDB.fallback_font,
+				Vector2(rect.position.x, center_y + 16.0),
+				LETTERS[layers[layer_index]],
+				HORIZONTAL_ALIGNMENT_CENTER,
+				rect.size.x,
+				44,
+				Color(0, 0, 0, 0.6)
+			)
 
 
 func _gui_input(event: InputEvent) -> void:

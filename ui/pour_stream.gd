@@ -39,7 +39,9 @@ func _draw() -> void:
 	var points := PackedVector2Array()
 	for step in CURVE_STEPS + 1:
 		var progress := float(step) / CURVE_STEPS
-		points.append(Vector2(lerpf(_start.x, _end.x, progress), _start.y + drop * progress * progress))
+		points.append(
+			Vector2(lerpf(_start.x, _end.x, progress), _start.y + drop * progress * progress)
+		)
 	draw_polyline(points, _color, MAX_WIDTH * _flow, true)
 
 	draw_set_transform(_end, 0.0, Vector2(1.0, 0.3))

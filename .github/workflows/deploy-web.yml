@@ -14,28 +14,18 @@ concurrency:
   group: deploy-web
   cancel-in-progress: true
 
-env:
-  GODOT_VERSION: 4.7.2
-  GODOT_RELEASE: stable
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - name: Install Godot and export templates
-        run: |
-          base="https://github.com/godotengine/godot-builds/releases/download/${GODOT_VERSION}-${GODOT_RELEASE}"
-          curl -fsSL -o godot.zip "${base}/Godot_v${GODOT_VERSION}-${GODOT_RELEASE}_linux.x86_64.zip"
-          curl -fsSL -o templates.tpz "${base}/Godot_v${GODOT_VERSION}-${GODOT_RELEASE}_export_templates.tpz"
-          unzip -q godot.zip -d "$RUNNER_TEMP/godot"
-          sudo mv "$RUNNER_TEMP/godot/Godot_v${GODOT_VERSION}-${GODOT_RELEASE}_linux.x86_64" /usr/local/bin/godot
-          template_dir="$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.${GODOT_RELEASE}"
-          mkdir -p "$template_dir"
-          unzip -q templates.tpz -d "$RUNNER_TEMP/templates"
-          mv "$RUNNER_TEMP"/templates/templates/* "$template_dir"
-          godot --version
+      - name: Set up Godot
+        uses: chickensoft-games/setup-godot@v2
+        with:
+          version: "4.7.2"
+          use-dotnet: false
+          include-templates: true
 
       - name: Import project
         run: godot --headless --path . --import

@@ -65,23 +65,37 @@ func _run() -> void:
 	game.pour_player.started.connect(func(_move_record: Dictionary) -> void: started_pours[0] += 1)
 	game._on_tap(path[0].x)
 	game._on_tap(path[0].y)
-	check(game.is_animating and started_pours[0] == 1, "a pour animates and announces itself after the second tap")
+	check(
+		game.is_animating and started_pours[0] == 1,
+		"a pour animates and announces itself after the second tap"
+	)
 	await _wait_idle(game)
-	check(not game.is_animating and game.state.history.size() == 1, "pour finishes and updates the state")
+	check(
+		not game.is_animating and game.state.history.size() == 1,
+		"pour finishes and updates the state"
+	)
 	var source_view: BottleView = game.views[path[0].x]
-	check(source_view.rotation == 0.0 and source_view.top_trim == 0.0 and source_view.z_index == 0,
-			"source bottle is upright and reset after the pour")
+	check(
+		source_view.rotation == 0.0 and source_view.top_trim == 0.0 and source_view.z_index == 0,
+		"source bottle is upright and reset after the pour"
+	)
 	game._on_undo()
 	check(game.state.key() == key_before, "undo restores the start position")
 
 	game._on_tap(path[0].x)
 	game._on_tap(path[0].y)
 	game._on_undo()
-	check(not game.is_animating and game.state.key() == key_before, "undo during a pour finishes it, then undoes it")
+	check(
+		not game.is_animating and game.state.key() == key_before,
+		"undo during a pour finishes it, then undoes it"
+	)
 	game._on_tap(path[0].x)
 	game._on_tap(path[0].y)
 	game._on_tap(path[0].x)
-	check(game.state.history.size() == 1 and not game.is_animating, "tapping during a pour finishes it first")
+	check(
+		game.state.history.size() == 1 and not game.is_animating,
+		"tapping during a pour finishes it first"
+	)
 	await _wait_idle(game)
 	game._on_undo()
 	check(game.state.key() == key_before, "state is back at the start after the skip checks")
@@ -104,8 +118,10 @@ func _run() -> void:
 
 	var bottle_count_before: int = restored_game.views.size()
 	restored_game._on_extra()
-	check(restored_game.views.size() == bottle_count_before + 1 and restored_game.extra_bottle_used,
-			"extra bottle adds one view")
+	check(
+		restored_game.views.size() == bottle_count_before + 1 and restored_game.extra_bottle_used,
+		"extra bottle adds one view"
+	)
 
 	restored_game._on_hint()
 	var frames := 0
@@ -128,8 +144,10 @@ func _run() -> void:
 		restored_game._on_tap(empty_index)
 		await process_frame
 	await create_timer(0.3).timeout
-	check(shaken_view.position.x == home_x and shaken_view.shake_offset == 0.0,
-			"rapid shakes never drift the bottle")
+	check(
+		shaken_view.position.x == home_x and shaken_view.shake_offset == 0.0,
+		"rapid shakes never drift the bottle"
+	)
 
 	restored_game.queue_free()
 	await process_frame
@@ -152,8 +170,10 @@ func _test_corrupt_saves() -> void:
 	_write_test_save('{"version": 999, "level": 4, "extra": true, "moves": [[0, 1]]}')
 	game = _make_game()
 	await process_frame
-	check(game.level == 4 and game.state.history.is_empty() and not game.extra_bottle_used,
-			"save from another version keeps level but drops moves")
+	check(
+		game.level == 4 and game.state.history.is_empty() and not game.extra_bottle_used,
+		"save from another version keeps level but drops moves"
+	)
 	game.queue_free()
 	await process_frame
 

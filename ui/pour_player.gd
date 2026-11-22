@@ -44,8 +44,13 @@ func is_playing() -> bool:
 
 
 ## `source` must hold the liquid from before the pour, `target` the liquid after it.
-func play(source: BottleView, target: BottleView, stream: PourStream, move_record: Dictionary,
-		screen_center_x: float) -> void:
+func play(
+	source: BottleView,
+	target: BottleView,
+	stream: PourStream,
+	move_record: Dictionary,
+	screen_center_x: float
+) -> void:
 	skip()
 	_source = source
 	_target = target
@@ -62,7 +67,9 @@ func play(source: BottleView, target: BottleView, stream: PourStream, move_recor
 
 	var rect := source.interior_rect()
 	_initial_volume = float(source.layers.size())
-	_spill_table = LiquidMath.spill_table(rect, _side, rect.size.x * source.layer_height, MAX_TILT, TABLE_STEPS)
+	_spill_table = LiquidMath.spill_table(
+		rect, _side, rect.size.x * source.layer_height, MAX_TILT, TABLE_STEPS
+	)
 	_spill_start_angle = LiquidMath.angle_for_volume(_spill_table, _initial_volume, MAX_TILT)
 
 	_start_lift = source.lift
@@ -71,8 +78,9 @@ func play(source: BottleView, target: BottleView, stream: PourStream, move_recor
 	source.z_index = RAISED_Z_INDEX
 	_home_position = source.position
 	var lip_target := Vector2(
-			target_center_x - _side * LIP_OFFSET_FRACTION * target.size.x,
-			target.position.y + BottleView.LIFT_PADDING - LIP_CLEARANCE)
+		target_center_x - _side * LIP_OFFSET_FRACTION * target.size.x,
+		target.position.y + BottleView.LIFT_PADDING - LIP_CLEARANCE
+	)
 	_pour_position = lip_target - source.pivot_offset
 
 	_pour_seconds = BASE_POUR_SECONDS + SECONDS_PER_LAYER * _layer_count
@@ -109,9 +117,16 @@ func _apply(progress: float) -> void:
 		_set_poured(smoothstep(0.0, 1.0, pour_progress) * _layer_count)
 		_source.position = _pour_position
 		_source.lift = 0.0
-		var flow := smoothstep(0.0, FLOW_FADE_IN, pour_progress) * (1.0 - smoothstep(FLOW_FADE_OUT_START, 1.0, pour_progress))
-		_stream.configure(_source.get_transform() * _source.lip_point(_side),
-				Vector2(_target.position.x + _target.size.x / 2.0, _target.liquid_top_y()), _color, flow)
+		var flow := (
+			smoothstep(0.0, FLOW_FADE_IN, pour_progress)
+			* (1.0 - smoothstep(FLOW_FADE_OUT_START, 1.0, pour_progress))
+		)
+		_stream.configure(
+			_source.get_transform() * _source.lip_point(_side),
+			Vector2(_target.position.x + _target.size.x / 2.0, _target.liquid_top_y()),
+			_color,
+			flow
+		)
 	else:
 		var blend := smoothstep(0.0, 1.0, (elapsed - ENTER_SECONDS - _pour_seconds) / EXIT_SECONDS)
 		_set_poured(float(_layer_count))
@@ -123,7 +138,9 @@ func _apply(progress: float) -> void:
 func _set_poured(poured: float) -> void:
 	_source.top_trim = poured
 	_target.top_trim = _layer_count - poured
-	_source.tilt = _side * LiquidMath.angle_for_volume(_spill_table, _initial_volume - poured, MAX_TILT)
+	_source.tilt = (
+		_side * LiquidMath.angle_for_volume(_spill_table, _initial_volume - poured, MAX_TILT)
+	)
 
 
 func _end_angle() -> float:

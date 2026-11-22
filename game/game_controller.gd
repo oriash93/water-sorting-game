@@ -3,9 +3,18 @@ extends Control
 const SAVE_VERSION := 1
 const BACKGROUND_COLOR := Color("#1E2430")
 const PALETTE: Array = [
-	Color("#E74C3C"), Color("#3498DB"), Color("#2ECC71"), Color("#F1C40F"),
-	Color("#9B59B6"), Color("#E67E22"), Color("#1ABC9C"), Color("#FD79A8"),
-	Color("#8D6E63"), Color("#BDC3C7"), Color("#A3E635"), Color("#8E2B3A"),
+	Color("#E74C3C"),
+	Color("#3498DB"),
+	Color("#2ECC71"),
+	Color("#F1C40F"),
+	Color("#9B59B6"),
+	Color("#E67E22"),
+	Color("#1ABC9C"),
+	Color("#FD79A8"),
+	Color("#8D6E63"),
+	Color("#BDC3C7"),
+	Color("#A3E635"),
+	Color("#8E2B3A"),
 ]
 
 const SELECT_LIFT := 36.0
@@ -61,13 +70,17 @@ func _ready() -> void:
 
 
 func _notification(what: int) -> void:
-	if what == NOTIFICATION_APPLICATION_PAUSED or what == NOTIFICATION_APPLICATION_FOCUS_OUT \
-			or what == NOTIFICATION_WM_CLOSE_REQUEST:
+	if (
+		what == NOTIFICATION_APPLICATION_PAUSED
+		or what == NOTIFICATION_APPLICATION_FOCUS_OUT
+		or what == NOTIFICATION_WM_CLOSE_REQUEST
+	):
 		if state != null:
 			_save()
 
 
 # ---------- UI construction ----------
+
 
 func _build_ui() -> void:
 	set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -191,7 +204,8 @@ func _layout() -> void:
 	var buttons: Array[Button] = [undo_button, hint_button, extra_button, restart_button]
 	for button_index in buttons.size():
 		buttons[button_index].position = Vector2(
-				BOARD_SIDE_MARGIN + button_index * (button_width + button_gap), button_y)
+			BOARD_SIDE_MARGIN + button_index * (button_width + button_gap), button_y
+		)
 		buttons[button_index].size = Vector2(button_width, BUTTON_HEIGHT)
 
 	board.position = Vector2(0, top_inset + 230)
@@ -210,14 +224,16 @@ func _layout_bottles() -> void:
 	var rows := 1 if bottle_count <= 5 else (2 if bottle_count <= 12 else 3)
 	var columns := ceili(float(bottle_count) / rows)
 	var available_width := board.size.x - BOARD_SIDE_MARGIN * 2.0
-	var bottle_width := minf(MAX_BOTTLE_WIDTH,
-			(available_width - (columns - 1) * BOTTLE_GAP) / columns)
+	var bottle_width := minf(
+		MAX_BOTTLE_WIDTH, (available_width - (columns - 1) * BOTTLE_GAP) / columns
+	)
 	var max_capacity := 4
 	for capacity in state.caps:
 		max_capacity = maxi(max_capacity, capacity)
 	var row_height := board.size.y / rows
-	var layer_height := minf(MAX_LAYER_HEIGHT,
-			(row_height - BottleView.LIFT_PADDING - 40.0) / max_capacity)
+	var layer_height := minf(
+		MAX_LAYER_HEIGHT, (row_height - BottleView.LIFT_PADDING - 40.0) / max_capacity
+	)
 	for bottle_index in bottle_count:
 		@warning_ignore("integer_division")
 		var row := bottle_index / columns
@@ -227,11 +243,13 @@ func _layout_bottles() -> void:
 		var bottle_view := views[bottle_index]
 		bottle_view.setup(state.caps[bottle_index], bottle_width, layer_height)
 		bottle_view.position = Vector2(
-				(board.size.x - row_width) / 2.0 + column * (bottle_width + BOTTLE_GAP),
-				row * row_height + (row_height - bottle_view.size.y) / 2.0)
+			(board.size.x - row_width) / 2.0 + column * (bottle_width + BOTTLE_GAP),
+			row * row_height + (row_height - bottle_view.size.y) / 2.0
+		)
 
 
 # ---------- Level flow ----------
+
 
 func _start_level(level_number: int, replay_moves: Array = [], with_extra_bottle := false) -> void:
 	level = maxi(1, level_number)
@@ -256,7 +274,12 @@ func _start_level(level_number: int, replay_moves: Array = [], with_extra_bottle
 ## Re-applies saved moves; stops at the first entry that is malformed or illegal.
 func _replay_moves(saved_moves: Array) -> void:
 	for entry in saved_moves:
-		if not (entry is Array) or entry.size() != 2 or not _is_number(entry[0]) or not _is_number(entry[1]):
+		if (
+			not (entry is Array)
+			or entry.size() != 2
+			or not _is_number(entry[0])
+			or not _is_number(entry[1])
+		):
 			return
 		var from_index := int(entry[0])
 		var to_index := int(entry[1])
@@ -313,6 +336,7 @@ func _best_moves_for(level_number: int) -> int:
 
 
 # ---------- Input ----------
+
 
 func _on_tap(tapped_index: int) -> void:
 	_settle_animation()
@@ -371,7 +395,9 @@ func _on_pour_finished() -> void:
 	else:
 		_save()
 		if Rules.legal_moves(state).is_empty():
-			_show_toast("No moves left - try Undo" + ("" if extra_bottle_used else " or + Bottle"), 4.0)
+			_show_toast(
+				"No moves left - try Undo" + ("" if extra_bottle_used else " or + Bottle"), 4.0
+			)
 	_update_hud()
 
 
@@ -388,7 +414,10 @@ func _on_win() -> void:
 	if is_new_best:
 		best_moves_by_level[str(level)] = move_count
 	win_title.text = "Level %d complete!" % level
-	win_info.text = "%d moves%s" % [move_count, "  -  new best!" if (is_new_best and previous_best != 0) else ""]
+	win_info.text = (
+		"%d moves%s"
+		% [move_count, "  -  new best!" if (is_new_best and previous_best != 0) else ""]
+	)
 	win_overlay.visible = true
 	_save()
 	_update_hud()
@@ -437,6 +466,7 @@ func _on_symbols() -> void:
 
 # ---------- Hint ----------
 
+
 func _on_hint() -> void:
 	_settle_animation()
 	if has_won or is_hinting:
@@ -464,9 +494,11 @@ func _process(_delta: float) -> void:
 		_show_toast("Yellow into green", 2.5)
 		_hint_token += 1
 		var token := _hint_token
-		get_tree().create_timer(3.0).timeout.connect(func() -> void:
-			if token == _hint_token:
-				_clear_hint())
+		get_tree().create_timer(3.0).timeout.connect(
+			func() -> void:
+				if token == _hint_token:
+					_clear_hint()
+		)
 	elif hint_solver.solved:
 		_show_toast("Already solved", 1.5)
 	else:
@@ -497,6 +529,7 @@ func _show_toast(text: String, seconds: float) -> void:
 
 # ---------- Save ----------
 
+
 static func _is_number(value: Variant) -> bool:
 	return typeof(value) == TYPE_INT or typeof(value) == TYPE_FLOAT
 
@@ -519,7 +552,11 @@ func _load_save() -> Dictionary:
 	if data.get("best") is Dictionary:
 		result.best = data.best
 	result.symbols = data.get("symbols") == true
-	if _is_number(data.get("version")) and int(data.version) == SAVE_VERSION and data.get("moves") is Array:
+	if (
+		_is_number(data.get("version"))
+		and int(data.version) == SAVE_VERSION
+		and data.get("moves") is Array
+	):
 		result.moves = data.moves
 		result.extra = data.get("extra") == true
 	return result

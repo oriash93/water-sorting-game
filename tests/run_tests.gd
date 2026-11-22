@@ -107,13 +107,27 @@ func _test_liquid_math() -> void:
 
 	var bounds := LiquidMath.layer_bounds(rect, upright, [1.0, 1.0, 1.0], layer_area)
 	check(_near(bounds[1] - bounds[0], layer_height, 0.05), "upright first layer is one layer tall")
-	check(_near(bounds[3] - bounds[0], 3.0 * layer_height, 0.05), "upright three layers are three layers tall")
-	var searched_level := LiquidMath.level_for_area(LiquidMath.corners(rect), upright, 2.0 * layer_area)
+	check(
+		_near(bounds[3] - bounds[0], 3.0 * layer_height, 0.05),
+		"upright three layers are three layers tall"
+	)
+	var searched_level := LiquidMath.level_for_area(
+		LiquidMath.corners(rect), upright, 2.0 * layer_area
+	)
 	check(_near(bounds[2], searched_level, 0.01), "upright shortcut matches the general search")
 
-	check(_near(LiquidMath.spill_capacity(rect, 1, 0.0, layer_area), 4.0, 0.001), "upright bottle holds its full capacity")
-	check(_near(LiquidMath.spill_capacity(rect, 1, PI / 2.0, layer_area), 0.0, 0.001), "bottle on its side holds nothing")
-	check(_near(LiquidMath.spill_capacity(rect, -1, -PI / 2.0, layer_area), 0.0, 0.001), "left lip on its side holds nothing")
+	check(
+		_near(LiquidMath.spill_capacity(rect, 1, 0.0, layer_area), 4.0, 0.001),
+		"upright bottle holds its full capacity"
+	)
+	check(
+		_near(LiquidMath.spill_capacity(rect, 1, PI / 2.0, layer_area), 0.0, 0.001),
+		"bottle on its side holds nothing"
+	)
+	check(
+		_near(LiquidMath.spill_capacity(rect, -1, -PI / 2.0, layer_area), 0.0, 0.001),
+		"left lip on its side holds nothing"
+	)
 
 	var max_angle := PI / 2.0 + 0.1
 	var table := LiquidMath.spill_table(rect, 1, layer_area, max_angle, 48)
@@ -122,10 +136,19 @@ func _test_liquid_math() -> void:
 		if table[step] > table[step - 1] + 0.0001:
 			decreasing = false
 	check(decreasing, "spill capacity only shrinks as the bottle tilts")
-	check(LiquidMath.angle_for_volume(table, 4.0, max_angle) == 0.0, "a full bottle starts spilling at no tilt")
-	check(LiquidMath.angle_for_volume(table, 0.0, max_angle) == max_angle, "emptying needs the maximum tilt")
+	check(
+		LiquidMath.angle_for_volume(table, 4.0, max_angle) == 0.0,
+		"a full bottle starts spilling at no tilt"
+	)
+	check(
+		LiquidMath.angle_for_volume(table, 0.0, max_angle) == max_angle,
+		"emptying needs the maximum tilt"
+	)
 	var angle := LiquidMath.angle_for_volume(table, 2.0, max_angle)
-	check(_near(LiquidMath.spill_capacity(rect, 1, angle, layer_area), 2.0, 0.05), "angle for two layers spills exactly two layers")
+	check(
+		_near(LiquidMath.spill_capacity(rect, 1, angle, layer_area), 2.0, 0.05),
+		"angle for two layers spills exactly two layers"
+	)
 
 	var tilted_up := LiquidMath.up_vector(0.7)
 	var tilted_bounds := LiquidMath.layer_bounds(rect, tilted_up, [1.0, 1.0], layer_area)
