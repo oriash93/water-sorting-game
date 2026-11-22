@@ -28,7 +28,10 @@ static func is_bottle_complete(state: PuzzleState, bottle_index: int) -> bool:
 
 ## A bottle the player may pick up: it has liquid and is not already finished.
 static func is_selectable(state: PuzzleState, bottle_index: int) -> bool:
-	return not (state.bottles[bottle_index] as Array).is_empty() and not is_bottle_complete(state, bottle_index)
+	return (
+		not (state.bottles[bottle_index] as Array).is_empty()
+		and not is_bottle_complete(state, bottle_index)
+	)
 
 
 ## Layers a pour from -> to would move; 0 when the pour is not legal.
@@ -98,6 +101,9 @@ static func undo(state: PuzzleState) -> Dictionary:
 
 static func is_solved(state: PuzzleState) -> bool:
 	for bottle_index in state.bottles.size():
-		if not (state.bottles[bottle_index] as Array).is_empty() and not is_bottle_complete(state, bottle_index):
+		if (
+			not (state.bottles[bottle_index] as Array).is_empty()
+			and not is_bottle_complete(state, bottle_index)
+		):
 			return false
 	return true

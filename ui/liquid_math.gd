@@ -10,12 +10,14 @@ const SOLVER_ITERATIONS := 24
 
 
 static func corners(rect: Rect2) -> PackedVector2Array:
-	return PackedVector2Array([
-		rect.position,
-		Vector2(rect.end.x, rect.position.y),
-		rect.end,
-		Vector2(rect.position.x, rect.end.y),
-	])
+	return PackedVector2Array(
+		[
+			rect.position,
+			Vector2(rect.end.x, rect.position.y),
+			rect.end,
+			Vector2(rect.position.x, rect.end.y),
+		]
+	)
 
 
 static func up_vector(rotation_radians: float) -> Vector2:
@@ -72,7 +74,9 @@ static func level_for_area(polygon: PackedVector2Array, up: Vector2, area: float
 
 ## Boundaries between stacked layers: bounds[0] is the bottle's lowest point and
 ## bounds[i + 1] is the surface level after layer i. `volumes` are in layers.
-static func layer_bounds(rect: Rect2, up: Vector2, volumes: Array, layer_area: float) -> PackedFloat32Array:
+static func layer_bounds(
+	rect: Rect2, up: Vector2, volumes: Array, layer_area: float
+) -> PackedFloat32Array:
 	var polygon := corners(rect)
 	var bounds := PackedFloat32Array()
 	bounds.append(lowest_level(polygon, up))
@@ -90,14 +94,18 @@ static func layer_bounds(rect: Rect2, up: Vector2, volumes: Array, layer_area: f
 
 ## Most liquid (in layers) the bottle can hold without spilling over its lip when
 ## rotated by `rotation_radians`. The lip is the top corner on `side` (+1 right, -1 left).
-static func spill_capacity(rect: Rect2, side: int, rotation_radians: float, layer_area: float) -> float:
+static func spill_capacity(
+	rect: Rect2, side: int, rotation_radians: float, layer_area: float
+) -> float:
 	var up := up_vector(rotation_radians)
 	var lip := Vector2(rect.end.x if side > 0 else rect.position.x, rect.position.y)
 	return area_below(corners(rect), up, up.dot(lip)) / layer_area
 
 
 ## spill_capacity sampled at evenly spaced tilt angles from 0 to `max_angle`.
-static func spill_table(rect: Rect2, side: int, layer_area: float, max_angle: float, steps: int) -> PackedFloat32Array:
+static func spill_table(
+	rect: Rect2, side: int, layer_area: float, max_angle: float, steps: int
+) -> PackedFloat32Array:
 	var table := PackedFloat32Array()
 	for step in steps:
 		var angle := max_angle * float(step) / float(steps - 1)

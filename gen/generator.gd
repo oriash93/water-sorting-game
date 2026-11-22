@@ -50,8 +50,12 @@ static func _scramble(params: LevelParams, rng: RandomNumberGenerator) -> Puzzle
 			break
 		# Avoid undoing the previous scramble step so levels get tangled.
 		if last != null:
-			var without_undo: Array = options.filter(func(option: ReverseMove) -> bool:
-				return not (option.take_from == last.put_into and option.put_into == last.take_from))
+			var without_undo: Array = options.filter(
+				func(option: ReverseMove) -> bool:
+					return not (
+						option.take_from == last.put_into and option.put_into == last.take_from
+					)
+			)
 			if not without_undo.is_empty():
 				options = without_undo
 		var pick: ReverseMove = options[rng.randi_range(0, options.size() - 1)]
