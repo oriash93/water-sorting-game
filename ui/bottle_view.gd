@@ -74,7 +74,7 @@ func _init() -> void:
 	_rim_style.set_border_width_all(5)
 	_lip_style.draw_center = false
 	_lip_style.set_border_width_all(4)
-	_lip_style.set_corner_radius_all(LIP_HEIGHT / 2.0)
+	_lip_style.set_corner_radius_all(roundi(LIP_HEIGHT / 2.0))
 	for style in [_glass_style, _rim_style]:
 		style.corner_radius_top_left = 6
 		style.corner_radius_top_right = 6

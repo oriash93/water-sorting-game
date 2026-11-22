@@ -202,7 +202,6 @@ func _layout() -> void:
 	_layout_bottles()
 
 
-@warning_ignore("integer_division")
 func _layout_bottles() -> void:
 	_settle_animation()
 	var bottle_count := views.size()
@@ -220,6 +219,7 @@ func _layout_bottles() -> void:
 	var layer_height := minf(MAX_LAYER_HEIGHT,
 			(row_height - BottleView.LIFT_PADDING - 40.0) / max_capacity)
 	for bottle_index in bottle_count:
+		@warning_ignore("integer_division")
 		var row := bottle_index / columns
 		var column := bottle_index % columns
 		var bottles_in_row := mini(columns, bottle_count - row * columns)
@@ -364,7 +364,7 @@ func _do_pour(from_index: int, to_index: int) -> void:
 	_update_hud()
 
 
-func _on_pour_finished(from_index: int, to_index: int) -> void:
+func _on_pour_finished() -> void:
 	_refresh_all()
 	if Rules.is_solved(state):
 		_on_win()
